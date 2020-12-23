@@ -29,6 +29,8 @@ parser.add_argument("--video", type=str, default=None,
                     help="Video file to be processed.")
 parser.add_argument("--cam", type=int, default=None,
                     help="The webcam index.")
+parser.add_argument("--out", type=str, default='output.mp4',
+                    help="Output video file")
 args = parser.parse_args()
 
 
@@ -47,12 +49,20 @@ def main():
     if video_src is None:
         print("Warning: video source not assigned, default webcam will be used.")
         video_src = 0
-
+                  
     cap = cv2.VideoCapture(video_src)
     if video_src == 0:
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     _, sample_frame = cap.read()
 
+    # setting for output mp4
+    save_path = args.out
+    fourcc = 'mp4v'  # output video codec
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
+              
     # Introduce mark_detector to detect landmarks.
     mark_detector = MarkDetector()
 
@@ -77,7 +87,7 @@ def main():
         cov_measure=0.1) for _ in range(6)]
 
     tm = cv2.TickMeter()
-
+    
     while True:
         # Read frame, crop it, flip it, suits your needs.
         frame_got, frame = cap.read()
@@ -146,10 +156,12 @@ def main():
             # Uncomment following line to draw head axes on frame.
             # pose_estimator.draw_axes(frame, steady_pose[0], steady_pose[1])
 
-        # Show preview.
-        cv2.imshow("Preview", frame)
-        if cv2.waitKey(10) == 27:
-            break
+#        # Show preview.
+#        cv2.imshow("Preview", frame)
+#        if cv2.waitKey(10) == 27:
+#            break
+#        # Save to File
+        vid_writer.write(frame)
 
     # Clean up the multiprocessing process.
     box_process.terminate()
